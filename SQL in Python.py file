@@ -1,0 +1,176 @@
+# 1
+# Task 1
+def add_member(id, name, age):
+  """Adds a new member to the Members table.
+
+  Args:
+      id: The unique identifier for the member.
+      name: The member's name.
+      age: The member's age.
+
+  Returns:
+      True if the member was added successfully, False otherwise.
+  """
+  conn = connect_db()
+  cursor = conn.cursor()
+  try:
+    cursor.execute("INSERT INTO Members (id, name, age) VALUES (?, ?, ?)", (id, name, age))
+    conn.commit()
+    print(f"Member {name} (ID: {id}) added successfully!")
+    return True
+  except sqlite3.IntegrityError:
+    print(f"Error: Member ID {id} already exists.")
+    return False
+  finally:
+    conn.close()
+
+#Task 2
+def add_workout_session(member_id, date, duration_minutes, calories_burned):
+  """Adds a new workout session for a specific member to the WorkoutSessions table.
+
+  Args:
+      member_id: The ID of the member who had the workout session.
+      date: The date of the workout session.
+      duration_minutes: The duration of the workout session in minutes.
+      calories_burned: The estimated calories burned during the workout.
+
+  Returns:
+      True if the workout session was added successfully, False otherwise.
+  """
+  conn = connect_db()
+  cursor = conn.cursor()
+  try:
+    cursor.execute("INSERT INTO WorkoutSessions (member_id, date, duration_minutes, calories_burned) VALUES (?, ?, ?, ?)", (member_id, date, duration_minutes, calories_burned))
+    conn.commit()
+    print(f"Workout session for member ID {member_id} added successfully!")
+    return True
+  except sqlite3.IntegrityError as err:
+    # Handle foreign key constraint violation (likely invalid member ID)
+    if "FOREIGN KEY constraint failed" in str(err):
+      print(f"Error: Invalid member ID {member_id}. Please check member records.")
+    else:
+      print(f"Error adding workout session: {err}")
+    return False
+  finally:
+    conn.close()
+
+#Task 3
+def update_member_age(member_id, new_age):
+  """Updates the age of a member in the Members table.
+
+  Args:
+      member_id: The ID of the member whose age needs to be updated.
+      new_age: The new age for the member.
+
+  Returns:
+      True if the member's age was updated successfully, False otherwise.
+  """
+  conn = connect_db()
+  cursor = conn.cursor()
+  try:
+    # Check if member exists
+    cursor.execute("SELECT * FROM Members WHERE id = ?", (member_id,))
+    if cursor.fetchone() is None:
+      print(f"Error: Member ID {member_id} not found.")
+      return False
+
+    # Update age if member exists
+    cursor.execute("UPDATE Members SET age = ? WHERE id = ?", (new_age, member_id))
+    conn.commit()
+    print(f"Member ID {member_id} age updated to {new_age}.")
+    return True
+  except sqlite3.Error as err:
+    print(f"Error updating member age: {err}")
+    return False
+  finally:
+    conn.close()
+
+#Task4
+import sqlite3
+
+def connect_db():
+  """Connects to the gym database or creates it if it doesn't exist."""
+  conn = sqlite3.connect('gym.db')
+  return conn
+
+def create_tables(conn):
+  """Creates the Members and WorkoutSessions tables if they don't exist."""
+  cursor = conn.cursor()
+  cursor.execute("""CREATE TABLE IF NOT EXISTS Members (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    age INTEGER
+                  )""")
+  cursor.execute("""CREATE TABLE IF NOT EXISTS WorkoutSessions (
+                    session_id INTEGER PRIMARY KEY,
+                    member_id INTEGER NOT NULL,
+                    date TEXT,
+                    duration_minutes INTEGER,
+                    calories_burned INTEGER,
+                    FOREIGN KEY (member_id) REFERENCES Members(id)
+                  )""")
+  conn.commit()
+
+def add_member(id, name, age):
+  """Adds a new member to the Members table.
+
+  Args:
+      id: The unique identifier for the member.
+      name: The member's name.
+      age: The member's age.
+
+  Returns:
+      True if the member was added successfully, False otherwise.
+  """
+  # ... (implementation as shown previously)
+
+def add_workout_session(member_id, date, duration_minutes, calories_burned):
+  """Adds a new workout session for a specific member to the WorkoutSessions table.
+
+  Args:
+      member_id: The ID of the member who had the workout session.
+      date: The date of the workout session.
+      duration_minutes: The duration of the workout session in minutes.
+      calories_burned: The estimated calories burned during the workout.
+
+  Returns:
+      True if the workout session was added successfully, False otherwise.
+  """
+  # ... (implementation as shown previously)
+
+def update_member_age(member_id, new_age):
+  """Updates the age of a member in the Members table.
+
+  Args:
+      member_id: The ID of the member whose age needs to be updated.
+      new_age: The new age for the member.
+
+  Returns:
+      True if the member's age was updated successfully, False otherwise.
+  """
+  # ... (implementation as shown previously)
+
+def delete_workout_session(session_id):
+  """Deletes a workout session from the WorkoutSessions table based on its ID.
+
+  Args:
+      session_id: The ID of the workout session to be deleted.
+
+  Returns:
+      True if the workout session was deleted successfully, False otherwise.
+  """
+  conn = connect_db()
+  cursor = conn.cursor()
+  try:
+    cursor.execute("DELETE FROM WorkoutSessions WHERE session_id = ?", (session_id,))
+    conn.commit()
+    if cursor.rowcount > 0:
+      print(f"Workout session ID {session_id} deleted successfully.")
+    else:
+      print(f"Error: Workout session ID {session_id} not found.")
+    return cursor.rowcount > 0  # Return True if deleted, False otherwise
+  except sqlite3.Error as err:
+    print(f"Error deleting workout session: {err}")
+    return False
+  finally:
+    conn.close()
